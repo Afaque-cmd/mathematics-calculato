@@ -1,27 +1,37 @@
 name: Build Android APK
-
 on:
-  workflow_dispatch:
   push:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare app
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
         run: |
-          cp new.py main.py
+          pip install --upgrade pip
+          pip install buildozer cython
+          sudo apt update
+          sudo apt install -y openjdk-17-jdk zip unzip
+
+      - name: Build APK
+        run: |
           cat > buildozer.spec <<'EOF'
           [app]
           title = Mathematics Calculator
           package.name = mathcalculator
           package.domain = org.classvii
-          source.dir = .
+          source.dir =.
           source.include_exts = py,png,jpg,kv,atlas
+          version = 0.1
           requirements = python3,kivy
           orientation = portrait
           fullscreen = 0
@@ -30,11 +40,7 @@ jobs:
           log_level = 2
           warn_on_root = 1
           EOF
-
-      - name: Build APK
-        uses: ArtemSBulgakov/buildozer-action@v1
-        with:
-          command: buildozer android debug
+          buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
